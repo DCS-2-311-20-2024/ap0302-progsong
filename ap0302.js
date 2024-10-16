@@ -1,6 +1,6 @@
 //
 // 応用プログラミング 第4回 課題2 (ap0302)
-// G184002021 拓殖太郎
+// G284092022 五十嵐健翔
 //
 "use strict"; // 厳格モード
 
@@ -11,10 +11,11 @@ import { myTriangleGeometry } from './myTriangleGeometry.js'
 // ３Ｄページ作成関数の定義
 function init() {
   const param = { // カメラの設定値
-    fov: 20, // 視野角
+    fov: 60, // 視野角
     x: 30,
     y: 10,
-    z: 30,
+    z: 40,
+    spead:0,
     wireframe: false
   };
 
@@ -24,11 +25,13 @@ function init() {
   // 座標軸の設定
   const axes = new THREE.AxesHelper(18);
   scene.add(axes);
+  axes.visible = false;
   
   // 素材の設定
   const glassMaterial = new THREE.MeshPhongMaterial({color: 'skyblue'});
   const bodyMaterial = new THREE.MeshPhongMaterial({color: 'orangered'});
   const tyreMaterial = new THREE.MeshBasicMaterial({color: 'black'});
+  const headlightMaterial = new THREE.MeshBasicMaterial({color: 'white'});
 
   // 車のサイズ
   const carW = 3.6;
@@ -52,19 +55,35 @@ function init() {
   const car = new THREE.Group();
   let mesh;
   //   ボディの作成
-
+  mesh = new THREE.Mesh(new THREE.BoxGeometry(carW,carH,carL), bodyMaterial);
+  mesh.position.y=-carH/2;
+  car.add(mesh);
   //   屋根の作成
-
+  mesh = new THREE.Mesh(new myTriangleGeometry( v[7], v[6], v[2]), bodyMaterial);
+  car.add(mesh);
+  mesh = new THREE.Mesh(new myTriangleGeometry( v[3], v[7], v[2]), bodyMaterial);
+  car.add(mesh);
   // 窓の作成
   //     左窓
   mesh = new THREE.Mesh(new myTriangleGeometry( v[0], v[1], v[2]), glassMaterial);
   car.add(mesh);
+  mesh = new THREE.Mesh(new myTriangleGeometry( v[3], v[2], v[1]), glassMaterial);
+  car.add(mesh);
   //     右窓
-
+  mesh = new THREE.Mesh(new myTriangleGeometry( v[5], v[4], v[7]), glassMaterial);
+  car.add(mesh);
+  mesh = new THREE.Mesh(new myTriangleGeometry( v[6], v[7], v[4]), glassMaterial);
+  car.add(mesh);
   //     前窓
-
+  mesh = new THREE.Mesh(new myTriangleGeometry( v[4], v[0], v[6]), glassMaterial);
+  car.add(mesh);
+  mesh = new THREE.Mesh(new myTriangleGeometry( v[2], v[6], v[0]), glassMaterial);
+  car.add(mesh);
   //     後窓
-
+  mesh = new THREE.Mesh(new myTriangleGeometry( v[1], v[5], v[3]), glassMaterial);
+  car.add(mesh);
+  mesh = new THREE.Mesh(new myTriangleGeometry( v[7], v[3], v[5]), glassMaterial);
+  car.add(mesh);
   //   タイアの作成
   const tyreR = 0.8;
   const tyreW = 0.5;
@@ -72,10 +91,35 @@ function init() {
   mesh.rotation.z = Math.PI/2;
   mesh.position.set(carW/2, -carH, 3/8*carL);
   car.add(mesh);
+  mesh = new THREE.Mesh(new THREE.CylinderGeometry(tyreR,tyreR,tyreW,16,1),tyreMaterial);
+  mesh.rotation.z=Math.PI/2;
+  mesh.position.set(-carW/2,-carH,3/8*carL);
+  car.add(mesh);
+  mesh = new THREE.Mesh(new THREE.CylinderGeometry(tyreR,tyreR,tyreW,16,1),tyreMaterial);
+  mesh.rotation.z=Math.PI/2;
+  mesh.position.set(carW/2,-carH,-3/8*carL);
+  car.add(mesh);
+  mesh = new THREE.Mesh(new THREE.CylinderGeometry(tyreR,tyreR,tyreW,16,1),tyreMaterial);
+  mesh.rotation.z=Math.PI/2;
+  mesh.position.set(-carW/2,-carH,-3/8*carL);
+  car.add(mesh);
+  //    ヘッドライト
+  const headlight = 0.3;
+  const seg = 12;
+  const circleGeometry=new THREE.CircleGeometry(headlight,seg);
+  mesh = new THREE.Mesh(circleGeometry,headlightMaterial);
+  mesh.position.set(carW/3,-carH/2,carL/2+0.01);
+  car.add(mesh);
+  mesh = new THREE.Mesh(circleGeometry,headlightMaterial);
+  mesh.position.set(-carW/3,-carH/2,carL/2+0.01);
+  car.add(mesh);
   // 高さの調整
-  
+  car.position.y=carH+tyreR;
   // 影の投影
-
+  car.children.forEach((child)=>{//=>:一回しか使わない時に便利
+    child.castShadow = true;
+    child.reciveShadow = true;
+  });
   scene.add(car);
 
   // 平面の設定
@@ -92,6 +136,8 @@ function init() {
   light1.position.set(0, 70, -3);
   light1.castShadow = true;
   scene.add(light1);
+  const light2 = new THREE.AmbientLight('white',0.5);
+  scene.add(light2);
     
   // カメラの設定
   const camera = new THREE.PerspectiveCamera(
@@ -101,6 +147,7 @@ function init() {
   const renderer = new THREE.WebGLRenderer();
   renderer.setSize( window.innerWidth, window.innerHeight );
   renderer.setClearColor( 0x406080 );
+  renderer.shadowMap.enabled = true;
   document.getElementById("WebGL-output")
     .appendChild(renderer.domElement);
 
@@ -114,9 +161,14 @@ function init() {
     camera.position.z = param.z;
     camera.lookAt(0, 0, 0);
     camera.updateProjectionMatrix();
+    theta = param.spead+(theta+0.01)%(2*Math.PI);;//(theta+0.01)%(2*Math.PI);
+    car.position.x=radius*Math.cos(theta);
+    car.position.z=radius*Math.sin(theta);
+    car.rotation.y=-(theta+0.01)%(2*Math.PI);
     car.children.forEach( (mesh) => {
       mesh.material.wireframe = param.wireframe;
     });
+    requestAnimationFrame(render);
     renderer.render(scene, camera);
   }
 
@@ -126,6 +178,7 @@ function init() {
   gui.add(param, "x", -40, 80);
   gui.add(param, "y", -40, 80);
   gui.add(param, "z", -40, 80);
+  gui.add(param,"spead",0,0.1);
   gui.add(param, "wireframe");
 
   // 描画
