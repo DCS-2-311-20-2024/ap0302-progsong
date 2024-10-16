@@ -104,9 +104,9 @@ function init() {
   mesh.position.set(-carW/2,-carH,-3/8*carL);
   car.add(mesh);
   //    ヘッドライト
-  const headlight = 0.3;
+  const headlight_rad = 0.3;
   const seg = 12;
-  const circleGeometry=new THREE.CircleGeometry(headlight,seg);
+  const circleGeometry=new THREE.CircleGeometry(headlight_rad,seg);
   mesh = new THREE.Mesh(circleGeometry,headlightMaterial);
   mesh.position.set(carW/3,-carH/2,carL/2+0.01);
   car.add(mesh);
